@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Counterpoint Sudoku</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a puzzle board of pitch rows × beat columns, bars boxed like sudoku regions; the cantus firmus notes are the printed "givens". */
+:root {
+  --paper: #f4f6f9;
+  --sheet: #ffffff;
+  --ink: #1b2231;
+  --muted: #5d6679;
+  --rule: #d5dae4;
+  --rule-strong: #8a93a6;
+  --accent: #1f6f78;
+  --accent-soft: #dcefF0;
+  --given: #1b2231;
+  --given-text: #ffffff;
+  --ok: #2c8a4b;
+  --ok-soft: #dff2e4;
+  --warn: #b97d06;
+  --warn-soft: #fbefd2;
+  --err: #c8372d;
+  --err-soft: #fbe0dd;
+  --pend: #4f63a3;
+  --pend-soft: #e3e8f7;
+  --hint: #1f6f78;
+  --font-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --cw: 34px;
+  --rh: 22px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #11151d; --sheet: #181d28; --ink: #e6e9f0; --muted: #9aa3b5; --rule: #2a3242; --rule-strong: #5a647a;
+    --accent: #5cc0c9; --accent-soft: #1b3438; --given: #d7dce7; --given-text: #11151d;
+    --ok: #5bc77d; --ok-soft: #173322; --warn: #e6b13c; --warn-soft: #3a2e12; --err: #ff6f63; --err-soft: #3d1a18;
+    --pend: #8fa2e6; --pend-soft: #1e2540; --hint: #5cc0c9; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #11151d; --sheet: #181d28; --ink: #e6e9f0; --muted: #9aa3b5; --rule: #2a3242; --rule-strong: #5a647a;
+  --accent: #5cc0c9; --accent-soft: #1b3438; --given: #d7dce7; --given-text: #11151d;
+  --ok: #5bc77d; --ok-soft: #173322; --warn: #e6b13c; --warn-soft: #3a2e12; --err: #ff6f63; --err-soft: #3d1a18;
+  --pend: #8fa2e6; --pend-soft: #1e2540; --hint: #5cc0c9; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; margin: 0; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.1; }
+button { font: inherit; color: inherit; }
+button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+/* ---------- landing ---------- */
+.hero { display: flex; flex-direction: column; gap: 10px; max-width: 62ch; }
+.hero h1 { font-size: clamp(34px, 6vw, 56px); font-weight: 700; letter-spacing: -.02em; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p { margin: 0; color: var(--muted); font-size: 17px; }
+.species-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.sp-card { text-align: left; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; cursor: pointer; display: flex; flex-direction: column; gap: 10px; transition: border-color .15s, transform .15s; }
+.sp-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.sp-card h3 { font-size: 22px; }
+.sp-card p { margin: 0; color: var(--muted); font-size: 14px; }
+.ratio { display: grid; gap: 3px; }
+.ratio .lane { display: grid; gap: 3px; }
+.ratio span { height: 10px; border-radius: 2px; background: var(--accent); }
+.ratio .lane.cf span { background: var(--given); }
+.ratio span.tie { background: transparent; border: 2px solid var(--accent); }
+.ratio span.rest { background: transparent; border: 1px dashed var(--rule-strong); }
+.tag { align-self: flex-start; font-family: var(--font-mono); font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+
+/* ---------- game toolbar ---------- */
+.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.topbar h2 { font-size: 26px; }
+.back { background: none; border: 1px solid var(--rule); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.back:hover { border-color: var(--accent); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--sheet); }
+.seg button { border: 0; background: none; padding: 6px 12px; cursor: pointer; border-right: 1px solid var(--rule); white-space: nowrap; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--sheet); }
+select { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--rule); background: var(--sheet); color: var(--ink); max-width: 100%; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { border: 1px solid var(--rule); background: var(--sheet); border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--sheet); font-weight: 700; }
+
+/* ---------- status ---------- */
+.status { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-family: var(--font-mono); font-size: 13px; }
+.pill { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--rule); background: var(--sheet); font-variant-numeric: tabular-nums; }
+.pill.err { color: var(--err); border-color: var(--err); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.banner { border-radius: 10px; padding: 12px 16px; font-weight: 700; display: flex; gap: 10px; align-items: center; }
+.banner.win { background: var(--ok-soft); color: var(--ok); border: 1px solid var(--ok); }
+
+/* ---------- board ---------- */
+.play { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .play { grid-template-columns: minmax(0, 1fr); } }
+.board-wrap { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 12px; overflow-x: auto; min-width: 0; }
+.board { display: grid; position: relative; width: max-content; user-select: none; }
+.rlabel { font-family: var(--font-mono); font-size: 11px; color: var(--muted); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; height: var(--rh); position: sticky; left: -12px; background: var(--sheet); z-index: 3; }
+.rlabel.c { color: var(--ink); font-weight: 700; }
+.cell { width: var(--cw); height: var(--rh); border: 0; border-bottom: 1px solid var(--rule); border-left: 1px solid var(--rule); background: transparent; padding: 0; cursor: pointer; position: relative; z-index: 1; }
+.cell.oct { border-bottom-color: var(--rule-strong); }
+.cell.bar { border-left: 2px solid var(--rule-strong); }
+.cell.lastcol { border-right: 2px solid var(--rule-strong); }
+.cell.selcol { background: var(--accent-soft); }
+.cell:hover { background: var(--accent-soft); }
+.cell.locked { cursor: default; }
+.cell.locked:hover { background: transparent; }
+.cell.selcol.locked:hover { background: var(--accent-soft); }
+.cell.cand::after { content: ""; position: absolute; inset: 0; margin: auto; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--hint); }
+.cfband { background: var(--given); color: var(--given-text); border-radius: 4px; margin: 2px 3px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; display: flex; align-items: center; padding-left: 6px; pointer-events: none; z-index: 2; opacity: .92; }
+.note { position: absolute; inset: 2px 3px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-size: 10px; font-weight: 700; border: 2px solid currentColor; background: var(--sheet); z-index: 4; pointer-events: none; }
+.note.ok { color: var(--ok); background: var(--ok-soft); }
+.note.warn { color: var(--warn); background: var(--warn-soft); }
+.note.err { color: var(--err); background: var(--err-soft); }
+.note.pend { color: var(--pend); background: var(--pend-soft); }
+.note.tied { border-style: dashed; }
+.note.playing { outline: 3px solid var(--accent); outline-offset: 1px; }
+.hdr { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: center; padding: 2px 0 6px; border-left: 2px solid var(--rule-strong); }
+.foot { font-family: var(--font-mono); font-size: 11px; font-weight: 700; text-align: center; padding-top: 6px; height: 28px; font-variant-numeric: tabular-nums; border-left: 1px solid transparent; cursor: pointer; }
+.foot.ok { color: var(--ok); } .foot.warn { color: var(--warn); } .foot.err { color: var(--err); } .foot.pend { color: var(--pend); } .foot.empty { color: var(--rule-strong); }
+.foot.sel { text-decoration: underline; text-underline-offset: 3px; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid currentColor; vertical-align: -2px; margin-right: 5px; }
+
+/* ---------- side panel ---------- */
+.side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.panel h3 { font-size: 17px; }
+.msgs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.msgs li { padding: 7px 10px; border-radius: 6px; font-size: 14px; border-left: 4px solid currentColor; }
+.msgs li.ok { color: var(--ok); background: var(--ok-soft); }
+.msgs li.warn { color: var(--warn); background: var(--warn-soft); }
+.msgs li.err { color: var(--err); background: var(--err-soft); }
+.msgs li.pend { color: var(--pend); background: var(--pend-soft); }
+.msgs li span { color: var(--ink); }
+.msgs li b { font-family: var(--font-mono); font-size: 12px; }
+.facts { font-family: var(--font-mono); font-size: 13px; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; }
+.rules { margin: 0; padding-left: 18px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.small { font-size: 13px; color: var(--muted); margin: 0; }
+kbd { font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; }
+@media (prefers-reduced-motion: reduce) { .sp-card { transition: none; } .sp-card:hover { transform: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app">
+  <section id="landing">
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div class="hero">
+        <span class="eyebrow">Fux · Gradus ad Parnassum · two voices</span>
+        <h1>Counterpoint <em>Sudoku</em></h1>
+        <p>The cantus firmus is printed in. Fill one note into every empty beat so every vertical interval and every melodic move obeys the rules. Each note turns green, amber or red the moment you place it.</p>
+      </div>
+      <div class="species-grid" id="speciesCards"></div>
+    </div>
+  </section>
+
+  <section id="game" hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="topbar">
+        <button class="back" id="backBtn" type="button">← Species</button>
+        <h2 id="gameTitle">First species</h2>
+      </div>
+      <div class="controls">
+        <div class="field"><span class="eyebrow">Species</span><div class="seg" id="spSeg"></div></div>
+        <div class="field"><label class="eyebrow" for="cfSelect">Cantus firmus</label><select id="cfSelect"></select></div>
+        <div class="field"><span class="eyebrow">Counterpoint</span><div class="seg" id="posSeg">
+          <button type="button" data-pos="above" id="posAbove">Above</button><button type="button" data-pos="below" id="posBelow">Below</button></div></div>
+        <div class="field"><span class="eyebrow">Tools</span><div class="actions">
+          <button class="btn primary" id="playBtn" type="button">▶ Play</button>
+          <button class="btn" id="hintBtn" type="button" aria-pressed="false">Show safe notes</button>
+          <button class="btn" id="newBtn" type="button">New cantus</button>
+          <button class="btn" id="clearBtn" type="button">Clear</button>
+        </div></div>
+      </div>
+      <div class="status" id="status"></div>
+      <div id="winBanner" hidden class="banner win">Solved. No rule broken. Press Play to hear it.</div>
+      <div class="play">
+        <div style="min-width:0">
+          <div class="board-wrap" id="boardWrap"><div class="board" id="board" tabindex="0" aria-label="Counterpoint board"></div></div>
+          <div class="legend">
+            <span style="color:var(--ok)"><i></i>Correct</span>
+            <span style="color:var(--warn)"><i></i>Allowed, but weak style</span>
+            <span style="color:var(--err)"><i></i>Breaks a rule</span>
+            <span style="color:var(--pend)"><i></i>Depends on the next note</span>
+            <span><kbd>←</kbd><kbd>→</kbd> beat · <kbd>↑</kbd><kbd>↓</kbd> move note · <kbd>⌫</kbd> erase · <kbd>Space</kbd> play</span>
+          </div>
+        </div>
+        <aside class="side">
+          <div class="panel" id="slotPanel"></div>
+          <div class="panel" id="allPanel"></div>
+          <div class="panel" id="rulesPanel"></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ================= music model ================= */
+const LETTERS = ['C','D','E','F','G','A','B'];
+const PC = [0,2,4,5,7,9,11];
+const parse = s => { const m = s.match(/^([A-G])(\d)$/); return (+m[2]) * 7 + LETTERS.indexOf(m[1]); };
+const letterOf = d => ((d % 7) + 7) % 7;
+const octOf = d => Math.floor(d / 7);
+const midiOf = (d, alt = 0) => 12 * (octOf(d) + 1) + PC[letterOf(d)] + alt;
+const nameOf = (d, alt = 0) => LETTERS[letterOf(d)] + (alt > 0 ? '♯' : alt < 0 ? '♭' : '') + octOf(d);
+const ORD = ['unison','2nd','3rd','4th','5th','6th','7th','octave','9th','10th','11th','12th','13th','14th','double octave'];
+
+const CANTI = [
+  { id: 'd-fux', name: 'D Dorian (Fux)', notes: 'D4 F4 E4 D4 G4 F4 A4 G4 F4 E4 D4' },
+  { id: 'e-fux', name: 'E Phrygian (Fux)', notes: 'E4 C4 D4 C4 A3 A4 G4 E4 F4 E4' },
+  { id: 'f-fux', name: 'F Lydian (Fux)', notes: 'F4 G4 A4 F4 D4 E4 F4 C5 A4 F4 G4 F4' },
+  { id: 'g-fux', name: 'G Mixolydian (Fux)', notes: 'G3 C4 B3 G3 C4 E4 D4 G4 E4 C4 D4 B3 A3 G3' },
+  { id: 'a-fux', name: 'A Aeolian (Fux)', notes: 'A3 C4 B3 D4 C4 E4 F4 E4 D4 C4 B3 A3' },
+  { id: 'c-fux', name: 'C Ionian (Fux)', notes: 'C4 E4 F4 G4 E4 A4 G4 E4 F4 E4 D4 C4' },
+  { id: 'c-short', name: 'C Major (short)', notes: 'C4 D4 F4 E4 F4 G4 A4 G4 E4 D4 C4' },
+  { id: 'd-short', name: 'D Dorian (short)', notes: 'D4 A3 C4 B3 D4 E4 F4 E4 D4' },
+  { id: 'g-short', name: 'G Major (short)', notes: 'G3 A3 C4 B3 E4 D4 C4 A3 B3 A3 G3' },
+].map(c => ({ ...c, steps: c.notes.split(' ').map(parse) }));
+
+const SPECIES = {
+  1: { name: 'First species', short: '1st', ratio: 'Note against note', desc: 'One whole note against each cantus note. Consonances only.', lanes: [[1],[1]] },
+  2: { name: 'Second species', short: '2nd', ratio: 'Two against one', desc: 'Two half notes per bar. The weak beat may be a dissonant passing tone.', lanes: [[1,1],[2]] },
+  3: { name: 'Third species', short: '3rd', ratio: 'Four against one', desc: 'Four quarter notes per bar. Passing tones, neighbours and the cambiata.', lanes: [[1,1,1,1],[4]] },
+  4: { name: 'Fourth species', short: '4th', ratio: 'Syncopation', desc: 'Tied half notes across the barline. Dissonant suspensions resolve down by step.', lanes: [['r','t'],[2]] },
+};
+
+const RULES = {
+  1: [
+    'Every interval is consonant: unison, 3rd, 5th, 6th, octave (or compounds). The 4th counts as a dissonance.',
+    'Begin on a perfect consonance (above: 1, 5 or 8; below: 1 or 8). End on a unison or octave.',
+    'Approach the final by step in contrary motion, from the raised leading tone (major 6th → octave above, minor 3rd → unison/octave below).',
+    'No parallel 5ths or octaves. Avoid direct (hidden) 5ths/8ves with a leap in the upper voice.',
+    'No unisons except at the first and last note.',
+    'Melody: mostly steps. No augmented intervals, 7ths, or leaps over an octave. Change direction after a large leap.',
+    'No more than three parallel 3rds or 6ths in a row. Keep the range within a 10th and aim for a single high point.',
+  ],
+  2: [
+    'Downbeats must be consonant. Begin perfect, end on a unison/octave, approach the final by step.',
+    'The weak beat may be dissonant only as a passing tone: approached and left by step in the same direction.',
+    'No parallel 5ths/8ves from weak beat to the next downbeat. Avoid 5ths/8ves on successive downbeats.',
+    'No repeated notes. No unison on a downbeat except at the ends.',
+    'The usual melodic rules apply: no augmented leaps, 7ths, or leaps beyond an octave.',
+  ],
+  3: [
+    'The first quarter of each bar must be consonant.',
+    'Beats 2–4 may be dissonant as passing tones or neighbour notes (step in, step out), or as the cambiata: step down to a dissonance on beat 2, leap down a 3rd, then step up.',
+    'No parallel 5ths/8ves between adjacent notes; avoid them on successive downbeats.',
+    'No repeated notes. End on a unison/octave, approached by step from the leading tone.',
+  ],
+  4: [
+    'The counterpoint begins after a half rest. Each upbeat is tied over the barline.',
+    'The tied downbeat may be consonant, or a dissonant suspension that resolves down by step on the upbeat.',
+    'Good suspensions above the cantus: 7–6 and 4–3. Below: 2–3. The 9–8 and 4–5 are weak; 7–8 below is forbidden.',
+    'Every upbeat (the note that moves) must be consonant.',
+    'The cadence is usually a 7–6 suspension (above) or 2–3 (below) leading to the octave.',
+  ],
+};
+
+function buildSlots(sp, n) {
+  const slots = [];
+  for (let b = 0; b < n; b++) {
+    const last = b === n - 1;
+    const per = last ? 1 : sp === 1 ? 1 : sp === 2 ? 2 : sp === 3 ? 4 : 2;
+    for (let i = 0; i < per; i++) {
+      const s = { bar: b, beat: i, per, idx: slots.length, editable: true, tie: null, rest: false };
+      if (sp === 4 && !last && i === 0) {
+        s.editable = false;
+        if (b === 0) s.rest = true; else s.tie = slots.length - 1;
+      }
+      slots.push(s);
+    }
+  }
+  return slots;
+}
+
+function makeModel(sp, cfDef, pos) {
+  const cf = cfDef.steps, n = cf.length;
+  const fl = letterOf(cf[n - 1]);
+  const lt = (fl + 6) % 7;
+  const cfDesc = cf[n - 2] > cf[n - 1];
+  const raise = cfDesc && fl !== 2 && ((PC[fl] - PC[lt] + 12) % 12) === 2;
+  const slots = buildSlots(sp, n);
+  return { sp, cf, n, pos, slots, cp: slots.map(() => null), lt, raise, cfDesc, cfDef };
+}
+
+const ownerOf = (M, k) => M.slots[k].tie != null ? M.slots[k].tie : k;
+function val(M, k) { const s = M.slots[k]; if (s.rest) return null; return M.cp[ownerOf(M, k)]; }
+function altAt(M, k, d) {
+  const o = M.slots[ownerOf(M, k)];
+  return (M.raise && o.bar === M.n - 2 && letterOf(d) === M.lt) ? 1 : 0;
+}
+function cpMidi(M, k) { const d = val(M, k); return d == null ? null : midiOf(d, altAt(M, k, d)); }
+
+function qualityName(g, s) {
+  const simpleG = g % 7, simpleS = s % 12;
+  const base = [0, 2, 4, 5, 7, 9, 11][simpleG];
+  let diff = simpleS - base; if (diff > 6) diff -= 12; if (diff < -6) diff += 12;
+  const perfectType = simpleG === 0 || simpleG === 3 || simpleG === 4;
+  let q;
+  if (perfectType) q = diff === 0 ? 'perfect' : diff > 0 ? 'augmented' : 'diminished';
+  else q = diff === 0 ? 'major' : diff === -1 ? 'minor' : diff > 0 ? 'augmented' : 'diminished';
+  if (g === 0 && s === 0) return 'unison';
+  if (g === 7 && s === 12) return 'octave';
+  return q + ' ' + (ORD[g] || (g + 1) + 'th');
+}
+
+function harm(M, k) {
+  const d = val(M, k); if (d == null) return null;
+  const c = M.cf[M.slots[k].bar];
+  const m1 = cpMidi(M, k), m2 = midiOf(c);
+  const generic = Math.abs(d - c), semis = Math.abs(m1 - m2);
+  const g = generic % 7, s = semis % 12;
+  const cons = (g === 0 && s === 0) || (g === 2 && (s === 3 || s === 4)) || (g === 4 && s === 7) || (g === 5 && (s === 8 || s === 9));
+  const perfect = (g === 0 && s === 0) ? '8' : (g === 4 && s === 7) ? '5' : null;
+  const crossed = M.pos === 'above' ? d < c : d > c;
+  return { generic, semis, g, s, cons, perfect, crossed, num: generic + 1, name: qualityName(generic, semis) };
+}
+
+const PNAME = { '8': 'octaves/unisons', '5': '5ths' };
+const sign = x => x > 0 ? 1 : x < 0 ? -1 : 0;
+
+/* Evaluate the whole board. Returns per-slot issue lists and global issues. */
+function evaluate(M) {
+  const S = M.slots, N = S.length, sp = M.sp, above = M.pos === 'above';
+  const iss = S.map(() => []);
+  const glob = [];
+  const add = (k, level, msg) => iss[k].push({ level, msg });
+  const v = k => val(M, k), m = k => cpMidi(M, k), cfD = k => M.cf[S[k].bar], cfM = k => midiOf(cfD(k));
+  const H = S.map((_, k) => harm(M, k));
+  const firstK = sp === 4 ? 1 : 0, lastK = N - 1, preK = N - 2;
+  const isStep = (a, b) => v(a) != null && v(b) != null && Math.abs(v(b) - v(a)) === 1;
+  const dir = (a, b) => sign(v(b) - v(a));
+
+  // ---- vertical intervals & dissonance treatment
+  for (let k = 0; k < N; k++) {
+    const h = H[k]; if (!h) continue;
+    const s = S[k], strong = s.beat === 0;
+    if (h.cons) {
+      add(k, 'ok', `${cap(h.name)} — consonant.`);
+    } else if (sp === 1 || k === firstK || k === lastK || (strong && sp !== 4)) {
+      add(k, 'err', `${cap(h.name)} is a dissonance. ${sp === 1 ? 'Every note in first species' : 'This beat'} must be consonant.`);
+    } else if (sp === 4 && !strong) {
+      add(k, 'err', `${cap(h.name)} on the upbeat. The moving note in fourth species must be consonant.`);
+    } else if (sp === 4 && strong) {
+      const q = k + 1;
+      if (v(q) == null) add(k, 'pend', `Suspension (${h.name}). Resolve it down by step on the upbeat.`);
+      else if (v(q) - v(k) !== -1 || !H[q].cons) add(k, 'err', `Suspension (${h.name}) must resolve down by step to a consonance.`);
+      else {
+        const a = h.g, b = H[q].g, lbl = `${h.num > 9 ? h.num - 7 : h.num}–${H[q].num > 9 ? H[q].num - 7 : H[q].num}`;
+        if (above) {
+          if ((a === 6 && b === 5) || (a === 3 && b === 2)) add(k, 'ok', `${lbl} suspension, prepared and resolved correctly.`);
+          else if (a === 1 && b === 0) add(k, 'warn', `${lbl} suspension resolves to a perfect interval; weak in two voices. Prefer 7–6 or 4–3.`);
+          else add(k, 'warn', `Unusual suspension (${h.name} → ${H[q].name}). Prefer 7–6 or 4–3.`);
+        } else {
+          if (a === 1 && b === 2) add(k, 'ok', `${lbl} suspension in the lower voice. Correct.`);
+          else if (a === 6 && b === 0) add(k, 'err', `7–8 suspension in the lower voice is forbidden: it just exposes the octave.`);
+          else if (a === 3 && b === 4) add(k, 'warn', `4–5 in the lower voice is acceptable but weak. Prefer 2–3.`);
+          else add(k, 'warn', `Unusual suspension (${h.name} → ${H[q].name}). Below the cantus, prefer 2–3.`);
+        }
+      }
+    } else if (sp === 2) {
+      const p = k - 1, q = k + 1;
+      if (v(p) == null) add(k, 'pend', `Dissonant ${h.name}: needs a step in from the downbeat.`);
+      else if (v(q) == null) add(k, isStep(p, k) ? 'pend' : 'err', isStep(p, k) ? `Dissonant ${h.name}: continue by step in the same direction to make it a passing tone.` : `Dissonant ${h.name} reached by leap. Weak-beat dissonances must be passing tones.`);
+      else if (isStep(p, k) && isStep(k, q) && dir(p, k) === dir(k, q)) add(k, 'ok', `Dissonant ${h.name} used as a passing tone. Correct.`);
+      else add(k, 'err', `Dissonant ${h.name} is not a passing tone. Approach and leave it by step in the same direction.`);
+    } else if (sp === 3) {
+      const p = k - 1, q = k + 1;
+      if (v(p) == null) { add(k, 'pend', `Dissonant ${h.name}: needs a step in from the note before.`); continue; }
+      if (!isStep(p, k)) { add(k, 'err', `Dissonant ${h.name} reached by leap. Dissonances must be approached by step.`); continue; }
+      if (v(q) == null) { add(k, 'pend', `Dissonant ${h.name}: leave it by step (passing or neighbour) or, on beat 2, by a 3rd down (cambiata).`); continue; }
+      if (isStep(k, q) && dir(p, k) === dir(k, q)) add(k, 'ok', `Dissonant ${h.name} as a passing tone. Correct.`);
+      else if (isStep(k, q) && v(q) === v(p)) add(k, 'ok', `Dissonant ${h.name} as a neighbour note. Correct.`);
+      else if (s.beat === 1 && dir(p, k) < 0 && v(q) - v(k) === -2) {
+        const r = k + 2;
+        if (v(r) == null) add(k, 'pend', `Cambiata in progress: the next note should step up.`);
+        else if (v(r) - v(q) === 1) add(k, 'ok', `Nota cambiata (step down, leap a 3rd down, step up). Correct.`);
+        else add(k, 'err', `Cambiata must continue by step up after the leap of a 3rd.`);
+      } else add(k, 'err', `Dissonant ${h.name} must be left by step (passing or neighbour tone).`);
+    }
+  }
+
+  // ---- motion between adjacent sounding moments
+  let par3 = 0, par3g = -1;
+  for (let k = 1; k < N; k++) {
+    const a = k - 1, b = k, ha = H[a], hb = H[b];
+    if (!ha || !hb) { par3 = 0; continue; }
+    const cpDir = sign(m(b) - m(a)), cfDir = sign(cfM(b) - cfM(a));
+    if (hb.perfect && cpDir !== 0 && cfDir !== 0) {
+      if (cpDir === cfDir && ha.perfect === hb.perfect) add(b, 'err', `Parallel ${PNAME[hb.perfect]} with the previous note.`);
+      else if (cpDir === cfDir) {
+        const upperLeaps = above ? Math.abs(v(b) - v(a)) > 1 : Math.abs(cfD(b) - cfD(a)) > 1;
+        if (upperLeaps) add(b, 'warn', `Direct (hidden) ${hb.perfect === '5' ? '5th' : 'octave'}: similar motion into a perfect interval with a leap in the upper voice.`);
+      } else if (cpDir === -cfDir && ha.perfect === hb.perfect) add(b, 'warn', `Consecutive ${PNAME[hb.perfect]} by contrary motion. Still counts as parallels in strict style.`);
+    }
+    if (sp === 1) {
+      const imp = (hb.g === 2 || hb.g === 5) && cpDir === cfDir && cpDir !== 0 && ha.g === hb.g;
+      if (imp) { par3 = par3g === hb.g ? par3 + 1 : 2; par3g = hb.g; } else { par3 = 0; par3g = -1; }
+      if (par3 === 4) add(b, 'warn', `Four parallel ${hb.g === 2 ? '3rds' : '6ths'} in a row. Vary the motion.`);
+    }
+    if (hb.crossed) add(b, 'warn', `Voice crossing: the counterpoint is ${above ? 'below' : 'above'} the cantus here.`);
+    if (hb.generic > 11) add(b, 'warn', `The voices are more than a 12th apart.`);
+    if (hb.generic === 0 && b !== lastK && b !== firstK) {
+      if (sp === 1) add(b, 'err', `Unison is only allowed on the first and last notes.`);
+      else if (S[b].beat === 0 && S[b].tie == null) add(b, 'err', `No unison on a downbeat except at the start and end.`);
+    }
+  }
+  if (H[0] && H[0].crossed) add(0, 'warn', `Voice crossing: the counterpoint is ${above ? 'below' : 'above'} the cantus here.`);
+
+  // ---- successive downbeats / upbeats (species 2–4)
+  if (sp > 1) {
+    const beatsOf = beat => S.filter(s => s.beat === beat && !s.rest).map(s => s.idx);
+    const lines = sp === 4 ? [beatsOf(0), beatsOf(1)] : [beatsOf(0)];
+    lines.forEach(list => {
+      for (let i = 1; i < list.length; i++) {
+        const a = list[i - 1], b = list[i];
+        if (H[a] && H[b] && H[a].perfect && H[a].perfect === H[b].perfect ) {
+          if (b === lastK && sp === 4) continue;
+          add(b, 'warn', `${H[b].perfect === '5' ? '5ths' : 'Octaves'} on successive ${S[b].beat === 1 ? 'upbeats' : 'downbeats'}. The notes in between don't hide them.`);
+        }
+      }
+    });
+  }
+
+  // ---- melody
+  const att = S.filter(s => !s.rest && s.tie == null).map(s => s.idx);
+  for (let i = 1; i < att.length; i++) {
+    const a = att[i - 1], b = att[i];
+    if (v(a) == null || v(b) == null) continue;
+    const gd = v(b) - v(a), sd = m(b) - m(a), ag = Math.abs(gd), as = Math.abs(sd);
+    if (gd === 0 && sd === 0) {
+      if (sp === 1) {
+        const z = att[i - 2];
+        if (z != null && v(z) === v(a)) add(b, 'err', `Three of the same note in a row.`);
+        else add(b, 'warn', `Repeated note. Allowed once or twice in first species, but it stalls the line.`);
+      } else add(b, 'err', sp === 4 ? `The upbeat repeats the tied note. Move on the upbeat.` : `Repeated notes are not allowed in ${SPECIES[sp].name.toLowerCase()}.`);
+      continue;
+    }
+    if (gd === 0) { add(b, 'err', `Chromatic step. Stay diatonic.`); continue; }
+    if (ag === 1) { if (as === 3) add(b, 'err', `Augmented 2nd. Not singable in strict style.`); }
+    else if (ag === 2) { if (as !== 3 && as !== 4) add(b, 'err', `Diminished or augmented 3rd leap.`); }
+    else if (ag === 3) { if (as === 6) add(b, 'err', `Tritone leap (augmented 4th). Forbidden.`); else if (as !== 5) add(b, 'err', `Augmented/diminished 4th leap.`); }
+    else if (ag === 4) { if (as === 6) add(b, 'err', `Diminished 5th leap. Avoid.`); else if (as !== 7) add(b, 'err', `Augmented 5th leap.`); }
+    else if (ag === 5) {
+      if (as === 8 && gd > 0) add(b, 'warn', `Ascending minor 6th. Allowed, but use sparingly and step back down.`);
+      else if (as === 8) add(b, 'err', `Descending 6th leap. Only the ascending minor 6th is allowed.`);
+      else add(b, 'err', `Major 6th leap. Not allowed in strict style.`);
+    }
+    else if (ag === 6) add(b, 'err', `Leap of a 7th. Forbidden.`);
+    else if (ag === 7) { if (as !== 12) add(b, 'err', `Augmented/diminished octave.`); }
+    else add(b, 'err', `Leap larger than an octave.`);
+
+    const z = att[i - 2];
+    if (z != null && v(z) != null) {
+      const pg = v(a) - v(z), pag = Math.abs(pg);
+      // recovery after a large leap
+      if (pag >= 3 && sign(gd) === sign(pg)) add(b, 'warn', `After a leap of a ${ORD[pag]}, change direction (preferably by step).`);
+      else if (pag >= 5 && ag > 1) add(b, 'warn', `After a leap of a ${ORD[pag]}, recover with a step in the opposite direction.`);
+      // two leaps in the same direction
+      if (pag >= 2 && ag >= 2 && sign(gd) === sign(pg)) {
+        const tot = Math.abs(v(b) - v(z));
+        if (tot > 7) add(b, 'err', `Two leaps in the same direction span more than an octave.`);
+        else if (tot === 6) add(b, 'err', `Two leaps in the same direction outline a 7th.`);
+        else if (![4, 5, 7].includes(tot)) add(b, 'warn', `Two leaps in the same direction. Only acceptable when they outline a consonant chord.`);
+      }
+    }
+  }
+
+  // ---- beginning and ending
+  if (H[firstK]) {
+    const h = H[firstK];
+    if (above && !h.perfect) add(firstK, 'err', `Begin on a perfect consonance: unison, 5th or octave.`);
+    else if (!above && h.perfect !== '8') add(firstK, 'err', `Below the cantus, begin on a unison or octave. A 5th below would put the piece in the wrong mode.`);
+    else if (h.perfect) add(firstK, 'ok', `Good opening on a perfect consonance.`);
+  }
+  if (H[lastK]) {
+    const h = H[lastK];
+    if (h.perfect !== '8') add(lastK, 'err', `End on a unison or octave with the cantus.`);
+    if (v(preK) != null) {
+      const want = M.cfDesc ? 1 : -1;
+      if (Math.abs(v(lastK) - v(preK)) !== 1) add(lastK, 'err', `Approach the final note by step.`);
+      else if (dir(preK, lastK) !== want) add(lastK, 'err', `Approach the final in contrary motion to the cantus.`);
+    }
+  }
+  if (v(preK) != null && v(lastK) != null && M.cfDesc && letterOf(v(preK)) === M.lt && M.raise) {
+    add(preK, 'ok', `Leading tone raised to ${nameOf(v(preK), 1).replace(/\d/, '')} for the cadence (musica ficta).`);
+  }
+
+  // ---- whole-line checks
+  const vals = att.map(v).filter(d => d != null);
+  const filled = S.filter(s => s.editable).every(s => M.cp[s.idx] != null);
+  if (vals.length > 1) {
+    const span = Math.max(...vals) - Math.min(...vals);
+    if (span > 9) glob.push({ level: 'warn', msg: `The counterpoint spans a ${ORD[span] || (span + 1) + 'th'}. Keep it within a 10th.` });
+  }
+  if (filled) {
+    const hi = Math.max(...vals), count = vals.filter(d => d === hi).length;
+    if (sp === 1 && count > 1) glob.push({ level: 'warn', msg: `The high note ${nameOf(hi)} appears ${count} times. A single climax gives the line a clearer shape.` });
+    if (sp === 1) {
+      const inner = H.slice(1, -1).filter(Boolean);
+      const perf = inner.filter(h => h.perfect).length;
+      if (perf > inner.length / 2) glob.push({ level: 'warn', msg: `${perf} of ${inner.length} inner intervals are perfect. Favour 3rds and 6ths.` });
+    }
+  }
+  return { iss, glob, H, filled };
+}
+
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const RANK = { err: 3, warn: 2, pend: 1, ok: 0 };
+const worst = list => list.reduce((w, x) => RANK[x.level] > RANK[w] ? x.level : w, 'ok');
+
+/* ================= app state ================= */
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+let M = null, E = null, sel = 0, showHints = false, playing = null;
+const $ = id => document.getElementById(id);
+const saveKey = () => `cps:${M.sp}:${M.cfDef.id}:${M.pos}`;
+
+function start(sp, cfId, pos) {
+  const cfDef = CANTI.find(c => c.id === cfId) || CANTI[0];
+  M = makeModel(sp, cfDef, pos);
+  const saved = store.get(saveKey());
+  if (Array.isArray(saved) && saved.length === M.cp.length) M.cp = saved;
+  sel = M.slots.find(s => s.editable).idx;
+  store.set('cps:last', { sp, cfId: cfDef.id, pos });
+  $('landing').hidden = true; $('game').hidden = false;
+  renderControls(); render();
+}
+
+function renderControls() {
+  $('gameTitle').textContent = `${SPECIES[M.sp].name} · ${SPECIES[M.sp].ratio}`;
+  $('spSeg').innerHTML = [1, 2, 3, 4].map(n => `<button type="button" data-sp="${n}" aria-pressed="${n === M.sp}">${SPECIES[n].short}</button>`).join('');
+  $('cfSelect').innerHTML = CANTI.map(c => `<option value="${c.id}" ${c.id === M.cfDef.id ? 'selected' : ''}>${c.name}</option>`).join('');
+  $('posAbove').setAttribute('aria-pressed', M.pos === 'above');
+  $('posBelow').setAttribute('aria-pressed', M.pos === 'below');
+  $('rulesPanel').innerHTML = `<h3>Rules · ${SPECIES[M.sp].name}</h3><ul class="rules">${RULES[M.sp].map(r => `<li>${r}</li>`).join('')}</ul>`;
+}
+
+function rowRange() {
+  const lo = Math.min(...M.cf), hi = Math.max(...M.cf);
+  return M.pos === 'above' ? [lo - 2, hi + 11] : [lo - 11, hi + 2];
+}
+
+function candidates(k) {
+  if (!M.slots[k].editable) return new Set();
+  const keep = M.cp[k];
+  M.cp[k] = null;
+  const errs = r => r.iss.reduce((n, l) => n + l.filter(x => x.level === 'err').length, 0);
+  const base = errs(evaluate(M));
+  const [lo, hi] = rowRange(), out = new Set();
+  for (let d = lo; d <= hi; d++) {
+    M.cp[k] = d;
+    const r = evaluate(M);
+    if (!r.iss[k].some(x => x.level === 'err') && errs(r) <= base) out.add(d);
+  }
+  M.cp[k] = keep;
+  return out;
+}
+
+function render() {
+  E = evaluate(M);
+  const S = M.slots, N = S.length, [lo, hi] = rowRange();
+  const cand = showHints ? candidates(sel) : new Set();
+  const board = $('board');
+  board.style.gridTemplateColumns = `48px repeat(${N}, var(--cw))`;
+  board.style.setProperty('--cw', M.sp === 3 ? '28px' : M.sp === 1 ? '46px' : '34px');
+  let html = '';
+  const rowOf = d => 2 + (hi - d);
+  // header: bar numbers
+  html += `<div style="grid-row:1;grid-column:1"></div>`;
+  for (let b = 0; b < M.n; b++) {
+    const cols = S.filter(s => s.bar === b);
+    html += `<div class="hdr" style="grid-row:1;grid-column:${cols[0].idx + 2} / span ${cols.length}">${b + 1}</div>`;
+  }
+  for (let d = hi; d >= lo; d--) {
+    const r = rowOf(d);
+    html += `<div class="rlabel ${letterOf(d) === 0 ? 'c' : ''}" style="grid-row:${r};grid-column:1">${nameOf(d)}</div>`;
+    for (let k = 0; k < N; k++) {
+      const s = S[k];
+      const cls = ['cell'];
+      if (s.beat === 0) cls.push('bar');
+      if (k === N - 1) cls.push('lastcol');
+      if (letterOf(d) === 0) cls.push('oct');
+      if (k === sel) cls.push('selcol');
+      if (!s.editable) cls.push('locked');
+      if (cand.has(d) && k === sel) cls.push('cand');
+      let inner = '';
+      const vd = val(M, k);
+      if (vd === d) {
+        const lvl = worst(E.iss[k]);
+        const h = E.H[k];
+        inner = `<span class="note ${lvl}${s.tie != null ? ' tied' : ''}" data-note="${k}">${h ? h.num : ''}</span>`;
+      }
+      const alt = altAt(M, k, d);
+      html += `<button type="button" class="${cls.join(' ')}" style="grid-row:${r};grid-column:${k + 2}" data-k="${k}" data-d="${d}" aria-label="Beat ${k + 1}, ${nameOf(d, alt)}" ${s.editable ? '' : 'tabindex="-1"'}>${inner}</button>`;
+    }
+  }
+  // cantus firmus givens
+  for (let b = 0; b < M.n; b++) {
+    const cols = S.filter(s => s.bar === b), d = M.cf[b];
+    if (d < lo || d > hi) continue;
+    html += `<div class="cfband" style="grid-row:${rowOf(d)};grid-column:${cols[0].idx + 2} / span ${cols.length}">${cols.length > 1 || M.sp === 1 ? nameOf(d).replace(/\d/, '') : ''}</div>`;
+  }
+  // footer: interval readout
+  const fr = rowOf(lo) + 1;
+  html += `<div class="rlabel" style="grid-row:${fr};grid-column:1">int.</div>`;
+  for (let k = 0; k < N; k++) {
+    const s = S[k], h = E.H[k];
+    let txt = '·', lvl = 'empty';
+    if (s.rest) txt = '𝄼';
+    else if (h) { txt = h.num; lvl = worst(E.iss[k]); }
+    html += `<div class="foot ${lvl}${k === sel ? ' sel' : ''}" style="grid-row:${fr};grid-column:${k + 2}" data-k="${k}">${txt}</div>`;
+  }
+  board.innerHTML = html;
+  renderSide(); renderStatus();
+  store.set(saveKey(), M.cp);
+}
+
+function slotLabel(k) {
+  const s = M.slots[k];
+  const beat = s.per > 1 ? `, beat ${s.beat + 1}` : '';
+  return `Bar ${s.bar + 1}${beat}`;
+}
+
+function renderSide() {
+  const k = sel, s = M.slots[k], h = E.H[k], d = val(M, k);
+  let html = `<span class="eyebrow">Selected</span><h3>${slotLabel(k)}</h3>`;
+  html += `<dl class="facts"><dt>Cantus</dt><dd>${nameOf(M.cf[s.bar])}</dd>`;
+  if (s.rest) html += `<dt>Counterp.</dt><dd>Half rest</dd>`;
+  else html += `<dt>Counterp.</dt><dd>${d == null ? '—' : nameOf(d, altAt(M, k, d))}${s.tie != null ? ' (tied)' : ''}</dd>`;
+  if (h) html += `<dt>Interval</dt><dd>${h.name}</dd>`;
+  html += `</dl>`;
+  if (s.rest) html += `<p class="small">Fourth species starts with a half rest. Your first note is on the upbeat.</p>`;
+  else if (s.tie != null) html += `<p class="small">This note is tied from the previous upbeat. Change it there.</p>`;
+  else if (d == null) html += `<p class="small">Click a square in this column to place a note, or press <kbd>↑</kbd>.</p>`;
+  const list = E.iss[k].slice().sort((a, b) => RANK[b.level] - RANK[a.level]);
+  if (list.length) html += `<ul class="msgs">${list.map(x => `<li class="${x.level}"><span>${x.msg}</span></li>`).join('')}</ul>`;
+  $('slotPanel').innerHTML = html;
+
+  const all = [];
+  E.iss.forEach((l, i) => l.forEach(x => { if (x.level === 'err' || x.level === 'warn') all.push({ ...x, k: i }); }));
+  E.glob.forEach(x => all.push({ ...x, k: null }));
+  all.sort((a, b) => RANK[b.level] - RANK[a.level]);
+  $('allPanel').innerHTML = `<h3>Whole exercise</h3>` + (all.length
+    ? `<ul class="msgs">${all.map(x => `<li class="${x.level}"><b>${x.k == null ? 'Overall' : slotLabel(x.k)}</b><br><span>${x.msg}</span></li>`).join('')}</ul>`
+    : `<p class="small">${E.filled ? 'Nothing to fix.' : 'No problems so far. Keep going.'}</p>`);
+}
+
+function renderStatus() {
+  const ed = M.slots.filter(s => s.editable);
+  const filled = ed.filter(s => M.cp[s.idx] != null).length;
+  let errs = 0, warns = 0;
+  E.iss.forEach(l => l.forEach(x => { if (x.level === 'err') errs++; if (x.level === 'warn') warns++; }));
+  E.glob.forEach(x => { if (x.level === 'warn') warns++; });
+  $('status').innerHTML = `<span class="pill">${filled}/${ed.length} notes</span><span class="pill ${errs ? 'err' : 'ok'}">${errs} error${errs === 1 ? '' : 's'}</span><span class="pill ${warns ? 'warn' : ''}">${warns} style warning${warns === 1 ? '' : 's'}</span><span class="pill">${M.cfDef.name} · ${M.pos}</span>`;
+  $('winBanner').hidden = !(E.filled && errs === 0);
+}
+
+/* ================= audio ================= */
+let ac = null;
+function audio() { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); return ac; }
+function tone(midi, t0, dur, type, vol) {
+  const a = audio(), o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(vol, t0 + 0.02);
+  g.gain.setValueAtTime(vol, t0 + Math.max(0.03, dur - 0.08));
+  g.gain.linearRampToValueAtTime(0, t0 + dur);
+  o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+}
+function dyad(k) {
+  const a = audio(), t = a.currentTime + 0.01, d = val(M, k);
+  tone(midiOf(M.cf[M.slots[k].bar]), t, 0.7, 'sine', 0.18);
+  if (d != null) tone(cpMidi(M, k), t, 0.7, 'triangle', 0.2);
+}
+function playAll() {
+  if (playing) { stopPlay(); return; }
+  const a = audio(), bar = 2.2, t0 = a.currentTime + 0.1, S = M.slots;
+  const timers = [];
+  M.cf.forEach((d, b) => tone(midiOf(d), t0 + b * bar, bar - 0.05, 'sine', 0.16));
+  S.forEach((s, k) => {
+    const at = t0 + s.bar * bar + s.beat * bar / s.per;
+    timers.push(setTimeout(() => { sel = k; render(); }, (at - a.currentTime) * 1000));
+    if (s.rest || s.tie != null || val(M, k) == null) return;
+    let len = bar / s.per;
+    if (S[k + 1] && S[k + 1].tie === k) len += bar / S[k + 1].per;
+    if (s.bar === M.n - 1) len = bar;
+    tone(cpMidi(M, k), at, len - 0.04, 'triangle', 0.2);
+  });
+  timers.push(setTimeout(stopPlay, (t0 + M.n * bar - a.currentTime) * 1000));
+  playing = { timers };
+  $('playBtn').textContent = '■ Stop';
+}
+function stopPlay() {
+  if (playing) playing.timers.forEach(clearTimeout);
+  playing = null;
+  if (ac) { ac.close(); ac = null; }
+  $('playBtn').textContent = '▶ Play';
+}
+
+/* ================= interaction ================= */
+function place(k, d) {
+  const s = M.slots[k];
+  if (s.rest) { sel = k; render(); return; }
+  if (s.tie != null) { sel = s.tie; render(); return; }
+  M.cp[k] = M.cp[k] === d ? null : d;
+  sel = k; render();
+  if (M.cp[k] != null) dyad(k);
+}
+$('board').addEventListener('click', e => {
+  const c = e.target.closest('.cell');
+  if (c) { place(+c.dataset.k, +c.dataset.d); return; }
+  const f = e.target.closest('.foot');
+  if (f) { sel = +f.dataset.k; render(); }
+});
+document.addEventListener('keydown', e => {
+  if ($('game').hidden || e.target.tagName === 'SELECT') return;
+  const N = M.slots.length;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    const step = e.key === 'ArrowRight' ? 1 : -1;
+    let k = sel + step;
+    while (k >= 0 && k < N && !M.slots[k].editable) k += step;
+    if (k >= 0 && k < N) { sel = k; render(); }
+    e.preventDefault();
+  } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    if (!M.slots[sel].editable) return;
+    const [lo, hi] = rowRange();
+    const cur = M.cp[sel];
+    let d = cur == null ? M.cf[M.slots[sel].bar] + (M.pos === 'above' ? 4 : -7) : cur + (e.key === 'ArrowUp' ? 1 : -1);
+    d = Math.max(lo, Math.min(hi, d));
+    M.cp[sel] = d; render(); dyad(sel);
+    e.preventDefault();
+  } else if (e.key === 'Backspace' || e.key === 'Delete') {
+    if (M.slots[sel].editable) { M.cp[sel] = null; render(); }
+    e.preventDefault();
+  } else if (e.key === ' ' && e.target.tagName !== 'BUTTON') {
+    playAll(); e.preventDefault();
+  }
+});
+$('spSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { stopPlay(); start(+b.dataset.sp, M.cfDef.id, M.pos); } });
+$('posSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { stopPlay(); start(M.sp, M.cfDef.id, b.dataset.pos); } });
+$('cfSelect').addEventListener('change', e => { stopPlay(); start(M.sp, e.target.value, M.pos); });
+$('newBtn').addEventListener('click', () => {
+  stopPlay();
+  const others = CANTI.filter(c => c.id !== M.cfDef.id);
+  start(M.sp, others[Math.floor(Math.random() * others.length)].id, M.pos);
+});
+$('clearBtn').addEventListener('click', () => { stopPlay(); M.cp = M.cp.map(() => null); sel = M.slots.find(s => s.editable).idx; render(); });
+$('hintBtn').addEventListener('click', () => { showHints = !showHints; $('hintBtn').setAttribute('aria-pressed', showHints); $('hintBtn').textContent = showHints ? 'Hide safe notes' : 'Show safe notes'; render(); });
+$('playBtn').addEventListener('click', playAll);
+$('backBtn').addEventListener('click', () => { stopPlay(); $('game').hidden = true; $('landing').hidden = false; });
+
+/* ================= landing ================= */
+function ratioHtml(lanes) {
+  const [top, bottom] = lanes;
+  const lane = (arr, cls) => `<div class="lane ${cls}" style="grid-template-columns:${arr.map(x => (typeof x === 'number' ? x : 1) + 'fr').join(' ')}">${arr.map(x => `<span class="${x === 't' ? 'tie' : x === 'r' ? 'rest' : ''}"></span>`).join('')}</div>`;
+  return `<div class="ratio">${lane(top, 'cp')}${lane(bottom, 'cf')}</div>`;
+}
+$('speciesCards').innerHTML = [1, 2, 3, 4].map(n => `
+  <button class="sp-card" type="button" data-sp="${n}">
+    <span class="tag">${SPECIES[n].ratio}</span>
+    <h3>${SPECIES[n].name}</h3>
+    ${ratioHtml(SPECIES[n].lanes)}
+    <p>${SPECIES[n].desc}</p>
+  </button>`).join('');
+$('speciesCards').addEventListener('click', e => {
+  const b = e.target.closest('.sp-card'); if (!b) return;
+  const last = store.get('cps:last');
+  start(+b.dataset.sp, last && last.cfId || CANTI[0].id, last && last.pos || 'above');
+});
+</script>
+</body>
+</html>
