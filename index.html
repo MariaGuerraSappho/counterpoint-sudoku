@@ -153,6 +153,55 @@ select { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid
 .small { font-size: 13px; color: var(--muted); margin: 0; }
 kbd { font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; }
 @media (prefers-reduced-motion: reduce) { .sp-card { transition: none; } .sp-card:hover { transform: none; } }
+
+/* ---------- game layer ---------- */
+.rankbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
+.rankbar b { font-family: var(--font-display); font-size: 22px; color: var(--accent); }
+.rankbar .small { margin: 0; }
+.sp-card .progress { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.sp-card .progress em { font-style: normal; color: var(--warn); }
+.hud { display: flex; flex-wrap: wrap; gap: 10px; }
+.stat { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 6px 14px; display: flex; flex-direction: column; min-width: 92px; }
+.stat b { font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-variant-numeric: tabular-nums; display: inline-block; }
+.stat.pts b { color: var(--accent); }
+.stat.hot b { color: var(--warn); }
+.stat.bad b { color: var(--err); }
+.bump { animation: bump .45s ease; }
+@keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.3); } 100% { transform: scale(1); } }
+.float { position: fixed; font-family: var(--font-display); font-weight: 700; font-size: 20px; pointer-events: none; z-index: 60; animation: floatUp .9s ease forwards; }
+.float.plus { color: var(--ok); } .float.minus { color: var(--err); }
+@keyframes floatUp { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-44px); } }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; display: flex; gap: 12px; align-items: center; background: var(--sheet); border: 2px solid var(--err); border-radius: 12px; padding: 10px 16px 10px 10px; width: max-content; max-width: min(540px, calc(100vw - 32px)); box-shadow: 0 12px 32px rgba(0,0,0,.28); }
+.toast.yay { border-color: var(--ok); }
+.toast img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; flex: none; background: var(--paper); }
+.toast p { margin: 0; }
+.toast .quip { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+.toast .why { font-size: 13px; color: var(--muted); }
+.toast.show { animation: toastIn .25s ease; }
+.toast.oops.show { animation: toastIn .25s ease, shake .45s ease .25s; }
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes shake { 0%,100% { margin-left: 0; } 20% { margin-left: -8px; } 40% { margin-left: 8px; } 60% { margin-left: -5px; } 80% { margin-left: 5px; } }
+.modal { position: fixed; inset: 0; z-index: 80; background: rgba(8, 12, 20, .62); display: grid; place-items: center; padding: 16px; }
+.modal-card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 16px; width: 100%; max-width: 520px; max-height: calc(100vh - 32px); overflow: auto; padding: 22px; display: flex; flex-direction: column; gap: 12px; text-align: center; animation: pop .35s cubic-bezier(.2,1.4,.4,1); }
+@keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-card h2 { font-size: 26px; }
+.big-stars { font-size: 44px; letter-spacing: 8px; color: var(--warn); line-height: 1; }
+.big-stars .off { color: var(--rule); }
+.modal-card img { width: 100%; height: 260px; object-fit: contain; border-radius: 10px; background: var(--paper); }
+.joke { font-family: var(--font-display); font-size: 19px; line-height: 1.3; }
+.joke .punch { display: block; color: var(--accent); margin-top: 4px; opacity: 0; transition: opacity .5s; }
+.joke .punch.on { opacity: 1; }
+.promo { font-weight: 700; color: var(--ok); }
+.modal-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.modal-stats b { display: block; font-family: var(--font-display); font-size: 20px; color: var(--ink); letter-spacing: 0; text-transform: none; }
+@media (max-width: 440px) { .modal-stats { grid-template-columns: repeat(2, 1fr); } .modal-card img { height: 200px; } }
+.modal-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
+.notation { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; margin-top: 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.notation-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.score-scroll { overflow-x: auto; }
+#score svg { display: block; }
+@media (prefers-reduced-motion: reduce) { .bump, .float, .toast.show, .toast.oops.show, .modal-card { animation: none; } }
 </style>
 </head>
 <body>
@@ -165,6 +214,7 @@ kbd { font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--ru
         <h1>Counterpoint <em>Sudoku</em></h1>
         <p>The cantus firmus is printed in. Fill one note into every empty beat so every vertical interval and every melodic move obeys the rules. Each note turns green, amber or red the moment you place it.</p>
       </div>
+      <div class="rankbar" id="rankBar"></div>
       <div class="species-grid" id="speciesCards"></div>
     </div>
   </section>
@@ -187,6 +237,7 @@ kbd { font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--ru
           <button class="btn" id="clearBtn" type="button">Clear</button>
         </div></div>
       </div>
+      <div class="hud" id="hud"></div>
       <div class="status" id="status"></div>
       <div id="winBanner" hidden class="banner win">Solved. No rule broken. Press Play to hear it.</div>
       <div class="play">
@@ -199,6 +250,10 @@ kbd { font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--ru
             <span style="color:var(--pend)"><i></i>Depends on the next note</span>
             <span><kbd>←</kbd><kbd>→</kbd> beat · <kbd>↑</kbd><kbd>↓</kbd> move note · <kbd>⌫</kbd> erase · <kbd>Space</kbd> play</span>
           </div>
+          <div class="notation">
+            <div class="notation-head"><span class="eyebrow">Notation</span><span class="small">Your counterpoint, coloured by correctness, against the cantus firmus</span></div>
+            <div class="score-scroll"><div id="score"></div></div>
+          </div>
         </div>
         <aside class="side">
           <div class="panel" id="slotPanel"></div>
@@ -210,6 +265,25 @@ kbd { font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--ru
   </section>
 </div>
 
+<div class="toast" id="toast" hidden role="status" aria-live="polite"><img id="toastImg" alt=""><div><p class="quip" id="toastQuip"></p><p class="why" id="toastWhy"></p></div></div>
+<div class="modal" id="winModal" hidden role="dialog" aria-modal="true" aria-labelledby="winTitle">
+  <div class="modal-card">
+    <div class="big-stars" id="winStars"></div>
+    <h2 id="winTitle">Solved!</h2>
+    <p class="promo" id="winPromo" hidden></p>
+    <img id="winGif" alt="Celebration GIF">
+    <p class="joke" id="winJoke"></p>
+    <div class="modal-stats" id="winStats"></div>
+    <div class="modal-actions">
+      <button class="btn primary" id="winNext" type="button">Next cantus →</button>
+      <button class="btn" id="winPlay" type="button">▶ Hear it</button>
+      <button class="btn" id="winClose" type="button">Close</button>
+    </div>
+  </div>
+</div>
+<canvas id="confetti" hidden></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.5/build/cjs/vexflow.js"></script>
 <script>
 /* ================= music model ================= */
 const LETTERS = ['C','D','E','F','G','A','B'];
@@ -539,6 +613,10 @@ function start(sp, cfId, pos) {
   M = makeModel(sp, cfDef, pos);
   const saved = store.get(saveKey());
   if (Array.isArray(saved) && saved.length === M.cp.length) M.cp = saved;
+  G = store.get(saveKey() + ':g') || newGame();
+  if (!G.seen) G.seen = {};
+  const ev = evaluate(M);
+  if (ev.filled && errCount(ev) === 0) G.won = true;
   sel = M.slots.find(s => s.editable).idx;
   store.set('cps:last', { sp, cfId: cfDef.id, pos });
   $('landing').hidden = true; $('game').hidden = false;
@@ -548,7 +626,8 @@ function start(sp, cfId, pos) {
 function renderControls() {
   $('gameTitle').textContent = `${SPECIES[M.sp].name} · ${SPECIES[M.sp].ratio}`;
   $('spSeg').innerHTML = [1, 2, 3, 4].map(n => `<button type="button" data-sp="${n}" aria-pressed="${n === M.sp}">${SPECIES[n].short}</button>`).join('');
-  $('cfSelect').innerHTML = CANTI.map(c => `<option value="${c.id}" ${c.id === M.cfDef.id ? 'selected' : ''}>${c.name}</option>`).join('');
+  const tr = trophies();
+  $('cfSelect').innerHTML = CANTI.map(c => { const st = tr[`cps:${M.sp}:${c.id}:${M.pos}`] || 0; return `<option value="${c.id}" ${c.id === M.cfDef.id ? 'selected' : ''}>${c.name}${st ? ' ' + '★'.repeat(st) : ''}</option>`; }).join('');
   $('posAbove').setAttribute('aria-pressed', M.pos === 'above');
   $('posBelow').setAttribute('aria-pressed', M.pos === 'below');
   $('rulesPanel').innerHTML = `<h3>Rules · ${SPECIES[M.sp].name}</h3><ul class="rules">${RULES[M.sp].map(r => `<li>${r}</li>`).join('')}</ul>`;
@@ -630,8 +709,9 @@ function render() {
     html += `<div class="foot ${lvl}${k === sel ? ' sel' : ''}" style="grid-row:${fr};grid-column:${k + 2}" data-k="${k}">${txt}</div>`;
   }
   board.innerHTML = html;
-  renderSide(); renderStatus();
+  renderSide(); renderStatus(); renderHud(); renderScore();
   store.set(saveKey(), M.cp);
+  store.set(saveKey() + ':g', G);
 }
 
 function slotLabel(k) {
@@ -672,6 +752,7 @@ function renderStatus() {
   E.glob.forEach(x => { if (x.level === 'warn') warns++; });
   $('status').innerHTML = `<span class="pill">${filled}/${ed.length} notes</span><span class="pill ${errs ? 'err' : 'ok'}">${errs} error${errs === 1 ? '' : 's'}</span><span class="pill ${warns ? 'warn' : ''}">${warns} style warning${warns === 1 ? '' : 's'}</span><span class="pill">${M.cfDef.name} · ${M.pos}</span>`;
   $('winBanner').hidden = !(E.filled && errs === 0);
+  if (E.filled && errs === 0 && !G.won) { G.won = true; setTimeout(() => win(warns), 350); }
 }
 
 /* ================= audio ================= */
@@ -721,9 +802,12 @@ function place(k, d) {
   const s = M.slots[k];
   if (s.rest) { sel = k; render(); return; }
   if (s.tie != null) { sel = s.tie; render(); return; }
+  const before = errCount(evaluate(M));
   M.cp[k] = M.cp[k] === d ? null : d;
-  sel = k; render();
-  if (M.cp[k] != null) dyad(k);
+  sel = k;
+  if (M.cp[k] != null) scoreMove(k, before);
+  render();
+  if (M.cp[k] != null) { dyad(k); floatAt(k, M.cp[k]); }
 }
 $('board').addEventListener('click', e => {
   const c = e.target.closest('.cell');
@@ -746,7 +830,11 @@ document.addEventListener('keydown', e => {
     const cur = M.cp[sel];
     let d = cur == null ? M.cf[M.slots[sel].bar] + (M.pos === 'above' ? 4 : -7) : cur + (e.key === 'ArrowUp' ? 1 : -1);
     d = Math.max(lo, Math.min(hi, d));
+    if (kbBefore == null) kbBefore = errCount(evaluate(M));
     M.cp[sel] = d; render(); dyad(sel);
+    clearTimeout(kbTimer);
+    const k0 = sel;
+    kbTimer = setTimeout(() => { scoreMove(k0, kbBefore); kbBefore = null; render(); floatAt(k0, M.cp[k0]); }, 900);
     e.preventDefault();
   } else if (e.key === 'Backspace' || e.key === 'Delete') {
     if (M.slots[sel].editable) { M.cp[sel] = null; render(); }
@@ -763,10 +851,270 @@ $('newBtn').addEventListener('click', () => {
   const others = CANTI.filter(c => c.id !== M.cfDef.id);
   start(M.sp, others[Math.floor(Math.random() * others.length)].id, M.pos);
 });
-$('clearBtn').addEventListener('click', () => { stopPlay(); M.cp = M.cp.map(() => null); sel = M.slots.find(s => s.editable).idx; render(); });
+$('clearBtn').addEventListener('click', () => { stopPlay(); M.cp = M.cp.map(() => null); G = newGame(); sel = M.slots.find(s => s.editable).idx; render(); });
 $('hintBtn').addEventListener('click', () => { showHints = !showHints; $('hintBtn').setAttribute('aria-pressed', showHints); $('hintBtn').textContent = showHints ? 'Hide safe notes' : 'Show safe notes'; render(); });
 $('playBtn').addEventListener('click', playAll);
-$('backBtn').addEventListener('click', () => { stopPlay(); $('game').hidden = true; $('landing').hidden = false; });
+$('backBtn').addEventListener('click', () => { stopPlay(); $('game').hidden = true; $('landing').hidden = false; renderLanding(); });
+
+/* ================= game layer ================= */
+const GIFS = ['O2s1XGruCvifbgemQX', 'ZY8ziRXilrPgTxp5po', '9A50I1gHt5YrSHoX0D', 'PidhSZjIQOWNyOxwCb', 'ytTYwIlbD1FBu', '10C8dIIpCux0ru',
+  'tODygE8KCqBzy', '3fiimcA0K0ifzoL7FF', 'RLbdOoQiCE3HEZEm5k', 'vFtWp05vBYnMQ', 'Tb7kidAdyEIve', '4UMgC1X6SX7AA', 'Dz0vdMQflNfBtZmLif'];
+const GIF_ANGRY = 'XbPTJbj9Al9sI79Xzz', GIF_HAPPY = 'kaUBqqihMgVIKaEFaw';
+const gifUrl = (id, small) => `https://media.giphy.com/media/${id}/${small ? '200w' : 'giphy'}.gif`;
+
+const WIN_JOKES = [
+  ['Why did Mozart get rid of his chickens?', 'They kept saying “Bach! Bach! Bach!”'],
+  ['What is Beethoven doing in his grave?', 'Decomposing.'],
+  ['Why couldn’t the string quartet find their composer?', 'He was Haydn.'],
+  ['What does a composer take to the supermarket?', 'A Chopin Liszt.'],
+  ['Why was the singer arrested?', 'She got in treble.'],
+  ['How do you fix a broken tuba?', 'With a tuba glue.'],
+  ['Why did the suspension go to therapy?', 'It had unresolved issues.'],
+  ['Why is Fux never invited to parties?', 'He stops everyone moving in parallel.'],
+  ['What’s the difference between a fifth and parallel fifths?', 'About ten marks on your theory exam.'],
+  ['How many counterpoint teachers does it take to change a light bulb?', 'One, but the bulb has to turn in contrary motion.'],
+  ['What do you get when you drop a piano down a mine shaft?', 'A flat minor.'],
+  ['What do you get when you drop a piano on an army base?', 'A flat major.'],
+  ['Why are pianos so hard to get into?', 'The keys are on the inside.'],
+  ['Why do cantus firmi make terrible dancers?', 'They only know whole notes.'],
+];
+const OOPS = [
+  [/Parallel|Consecutive|successive/, ['Parallel fifths! Somewhere, Fux just dropped his quill.', 'Parallel octaves: two voices, one brain cell.', 'Those voices are moving like synchronised swimmers. Not a compliment.']],
+  [/Tritone|tritone|Augmented|augmented|Diminished|diminished/, ['Diabolus in musica! The tritone has entered the chat.', 'That interval was banned in 1600 and it’s still banned today.']],
+  [/[Ss]uspension/, ['Unresolved suspension: you’ve left us all hanging.', 'That suspension needs to fall down a step. Gravity is your friend.']],
+  [/dissonan|Dissonant|upbeat/, ['Ouch. My ears just filed a complaint.', 'That dissonance has no exit plan.', 'Even Stravinsky would ask you to resolve that.']],
+  [/[Ll]eap/, ['That leap needs a parachute.', 'Sopranos everywhere just pulled a muscle.', 'Whoa there, kangaroo.']],
+  [/[Uu]nison/, ['Unison mid-phrase? Give the voices some personal space.']],
+  [/[Rr]epeat|same note/, ['Stuck record! Keep the line moving.']],
+  [/Begin|End|final/, ['Cadences are like landings: aim for the runway.', 'Start and finish on a perfect consonance. Fux insists.']],
+];
+const OOPS_DEFAULT = ['Fux is shaking his powdered wig.', 'Close, but Palestrina wouldn’t sign it.', 'Beethoven heard that. And he was deaf.'];
+const STREAK_LINES = { 3: 'Three in a row. Fux nods approvingly.', 5: 'Five in a row! Palestrina is taking notes.', 8: 'Eight in a row. Bach wants to know if you’re free on Sundays.', 12: 'Twelve in a row! Is that you, Mozart?' };
+const RANKS = [[0, 'Choirboy'], [3, 'Chorister'], [8, 'Cantor'], [15, 'Kapellmeister'], [25, 'Fux’s Favourite Student'], [40, 'Palestrina Reborn']];
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const errCount = r => r.iss.reduce((n, l) => n + l.filter(x => x.level === 'err').length, 0);
+const newGame = () => ({ points: 0, mistakes: 0, streak: 0, best: 0, t0: Date.now(), t1: null, won: false, seen: {} });
+let G = newGame(), toastTimer = null, kbTimer = null, kbBefore = null;
+
+function trophies() { return store.get('cps:trophies') || {}; }
+function totalStars(t = trophies()) { return Object.values(t).reduce((a, b) => a + b, 0); }
+function rankOf(st) {
+  let r = RANKS[0], next = null;
+  for (const x of RANKS) { if (st >= x[0]) r = x; else { next = x; break; } }
+  return { name: r[1], next };
+}
+const fmtTime = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+
+function scoreMove(k, before) {
+  const d = M.cp[k]; if (d == null) return;
+  const key = `${k}:${d}`;
+  if (G.seen[key]) return;            // no farming points by re-placing the same note
+  G.seen[key] = 1;
+  const r = evaluate(M), lvl = worst(r.iss[k]);
+  if (errCount(r) > before || lvl === 'err') {
+    G.mistakes++; G.streak = 0; G.points = Math.max(0, G.points - 5); G.last = -5;
+    const e = r.iss[k].find(x => x.level === 'err') || r.iss.flat().find(x => x.level === 'err') || { msg: '' };
+    const hit = OOPS.find(([re]) => re.test(e.msg));
+    showToast('oops', pick(hit ? hit[1] : OOPS_DEFAULT), e.msg, GIF_ANGRY);
+  } else {
+    const gain = lvl === 'ok' ? 10 + G.streak * 2 : lvl === 'warn' ? 4 : 3;
+    G.points += gain; G.last = gain;
+    if (lvl !== 'warn') G.streak++;
+    G.best = Math.max(G.best, G.streak);
+    if (STREAK_LINES[G.streak]) showToast('yay', STREAK_LINES[G.streak], `Streak bonus: +${G.streak * 2} per note`, GIF_HAPPY);
+  }
+  G.bump = true;
+}
+
+function floatAt(k, d) {
+  if (G.last == null || d == null) return;
+  const cell = document.querySelector(`.cell[data-k="${k}"][data-d="${d}"]`);
+  if (!cell) return;
+  const r = cell.getBoundingClientRect(), f = document.createElement('div');
+  f.className = 'float ' + (G.last > 0 ? 'plus' : 'minus');
+  f.textContent = (G.last > 0 ? '+' : '') + G.last;
+  f.style.left = (r.left + r.width / 2 - 12) + 'px'; f.style.top = (r.top - 8) + 'px';
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 950);
+  G.last = null;
+}
+
+function renderHud() {
+  const st = totalStars(), rank = rankOf(st);
+  const t = (G.t1 || Date.now()) - G.t0;
+  $('hud').innerHTML = `
+    <div class="stat pts"><span class="eyebrow">Points</span><b id="hudPts" class="${G.bump ? 'bump' : ''}">${G.points}</b></div>
+    <div class="stat hot"><span class="eyebrow">Streak</span><b>${G.streak}</b></div>
+    <div class="stat ${G.mistakes ? 'bad' : ''}"><span class="eyebrow">Mistakes</span><b>${G.mistakes}</b></div>
+    <div class="stat"><span class="eyebrow">Time</span><b id="hudTime">${fmtTime(t)}</b></div>
+    <div class="stat"><span class="eyebrow">Rank · ${st} ★</span><b style="font-size:18px">${rank.name}</b></div>`;
+  G.bump = false;
+}
+setInterval(() => { if (M && !$('game').hidden && !G.won && $('hudTime')) $('hudTime').textContent = fmtTime(Date.now() - G.t0); }, 1000);
+
+function showToast(kind, quip, why, gif) {
+  const t = $('toast');
+  t.className = 'toast ' + kind;
+  $('toastImg').src = gifUrl(gif, true);
+  $('toastQuip').textContent = quip;
+  $('toastWhy').textContent = why || '';
+  t.hidden = false;
+  void t.offsetWidth; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, kind === 'oops' ? 4200 : 3000);
+}
+
+function win(warns) {
+  $('toast').hidden = true;
+  G.t1 = Date.now();
+  const stars = G.mistakes === 0 ? 3 : G.mistakes <= 2 ? 2 : 1;
+  const bonus = stars * 50 + (warns === 0 ? 50 : 0);
+  G.points += bonus;
+  const t = trophies(), beforeRank = rankOf(totalStars(t)).name, key = saveKey();
+  const improved = stars > (t[key] || 0);
+  if (improved) { t[key] = stars; store.set('cps:trophies', t); }
+  const afterRank = rankOf(totalStars(t));
+  $('winStars').innerHTML = [1, 2, 3].map(i => i <= stars ? '★' : '<span class="off">★</span>').join('');
+  $('winTitle').textContent = stars === 3 ? (warns === 0 ? 'Flawless. Fux would weep with joy.' : 'Three stars! Palestrina approves.') : stars === 2 ? 'Solved! Two stars.' : 'Solved! Now try it with fewer mistakes.';
+  const promo = $('winPromo');
+  promo.hidden = beforeRank === afterRank.name;
+  promo.textContent = `Promoted to ${afterRank.name}!`;
+  $('winGif').src = gifUrl(pick(GIFS));
+  const [q, a] = pick(WIN_JOKES);
+  $('winJoke').innerHTML = `${q}<span class="punch" id="punch">${a}</span>`;
+  setTimeout(() => { const p = $('punch'); if (p) p.classList.add('on'); }, 1800);
+  $('winStats').innerHTML = `<div><b>${G.points}</b>points</div><div><b>${fmtTime(G.t1 - G.t0)}</b>time</div><div><b>${G.mistakes}</b>mistakes</div><div><b>${G.best}</b>best streak</div>`;
+  $('winModal').hidden = false;
+  renderHud(); renderControls();
+  store.set(saveKey() + ':g', G);
+  confetti();
+  fanfare();
+}
+function fanfare() {
+  try {
+    const a = audio(), t = a.currentTime + 0.05, f = midiOf(M.cf[M.n - 1]);
+    [[0, 0], [4, .12], [7, .24], [12, .36]].forEach(([iv, dt]) => tone(f + iv, t + dt, dt === .36 ? 0.9 : 0.2, 'triangle', 0.18));
+  } catch (e) {}
+}
+$('winClose').addEventListener('click', () => { $('winModal').hidden = true; });
+$('winPlay').addEventListener('click', () => { $('winModal').hidden = true; if (playing) stopPlay(); playAll(); });
+$('winNext').addEventListener('click', () => {
+  $('winModal').hidden = true; stopPlay();
+  const t = trophies();
+  const todo = CANTI.filter(c => c.id !== M.cfDef.id && !t[`cps:${M.sp}:${c.id}:${M.pos}`]);
+  const pool = todo.length ? todo : CANTI.filter(c => c.id !== M.cfDef.id);
+  start(M.sp, pick(pool).id, M.pos);
+});
+
+function confetti() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cv = $('confetti'), ctx = cv.getContext('2d');
+  cv.hidden = false;
+  const W = cv.width = innerWidth, H = cv.height = innerHeight;
+  const cs = getComputedStyle(document.documentElement);
+  const cols = ['--accent', '--ok', '--warn', '--err', '--pend'].map(v => cs.getPropertyValue(v).trim());
+  const glyphs = ['♪', '♫', '♩', '♬'];
+  const P = Array.from({ length: 160 }, (_, i) => ({
+    x: W / 2 + (Math.random() - .5) * 200, y: H * .55, vx: (Math.random() - .5) * 16, vy: -Math.random() * 18 - 6,
+    r: Math.random() * Math.PI, vr: (Math.random() - .5) * .3, c: cols[i % cols.length], g: i % 5 === 0 ? glyphs[i % 4] : null, s: 6 + Math.random() * 6,
+  }));
+  const t0 = performance.now();
+  (function frame(now) {
+    ctx.clearRect(0, 0, W, H);
+    P.forEach(p => {
+      p.vy += .45; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c;
+      if (p.g) { ctx.font = '22px serif'; ctx.fillText(p.g, 0, 0); } else ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+      ctx.restore();
+    });
+    if (now - t0 < 3200) requestAnimationFrame(frame); else { ctx.clearRect(0, 0, W, H); cv.hidden = true; }
+  })(t0);
+}
+
+function renderLanding() {
+  const t = trophies(), st = totalStars(t), rank = rankOf(st);
+  $('rankBar').innerHTML = `<span class="eyebrow">Your rank</span><b>${rank.name}</b><span class="small">${st} ★ earned${rank.next ? ` · ${rank.next[0] - st} more to become ${rank.next[1]}` : ' · the highest rank there is'}</span>`;
+  document.querySelectorAll('[data-progress]').forEach(el => {
+    const n = el.dataset.progress;
+    const keys = Object.keys(t).filter(k => k.startsWith(`cps:${n}:`));
+    const stars = keys.reduce((a, k) => a + t[k], 0);
+    el.innerHTML = keys.length ? `Solved ${keys.length} of ${CANTI.length * 2} · <em>${stars} ★</em>` : `${CANTI.length * 2} puzzles · 3 ★ each`;
+  });
+}
+
+/* ================= staff notation ================= */
+function vfKey(d, alt) { return LETTERS[letterOf(d)].toLowerCase() + (alt > 0 ? '#' : '') + '/' + octOf(d); }
+function renderScore() {
+  const host = $('score');
+  host.innerHTML = '';
+  if (!window.Vex || !Vex.Flow) { host.innerHTML = '<p class="small">The notation library didn’t load. Check the internet connection and reload.</p>'; return; }
+  try {
+    const VF = Vex.Flow, S = M.slots, cs = getComputedStyle(document.documentElement);
+    const tok = n => cs.getPropertyValue(n).trim();
+    const ink = tok('--ink');
+    const colors = { ok: tok('--ok'), warn: tok('--warn'), err: tok('--err'), pend: tok('--pend') };
+    const style = c => ({ fillStyle: c, strokeStyle: c });
+    const avg = M.cf.reduce((a, b) => a + b, 0) / M.n;
+    const cfClef = avg >= 26 ? 'treble' : 'bass';
+    const cpClef = M.pos === 'above' ? 'treble' : 'bass';
+    const perBar = M.sp === 1 ? 64 : M.sp === 3 ? 150 : 96;
+    const widths = M.cf.map((_, b) => (b === M.n - 1 ? 72 : perBar) + (b === 0 ? 64 : 0));
+    const W = widths.reduce((a, b) => a + b, 0) + 24, H = 250;
+    const renderer = new VF.Renderer(host, VF.Renderer.Backends.SVG);
+    renderer.resize(W, H);
+    const ctx = renderer.getContext();
+    ctx.setFillStyle(ink); ctx.setStrokeStyle(ink);
+    const topIsCP = M.pos === 'above';
+    const notes = {};
+    let x = 12, firstTop = null, firstBot = null;
+    for (let b = 0; b < M.n; b++) {
+      const w = widths[b];
+      const sTop = new VF.Stave(x, 20, w), sBot = new VF.Stave(x, 130, w);
+      const cpSt = topIsCP ? sTop : sBot, cfSt = topIsCP ? sBot : sTop;
+      if (b === 0) { cpSt.addClef(cpClef); cfSt.addClef(cfClef); firstTop = sTop; firstBot = sBot; }
+      if (b === M.n - 1) { sTop.setEndBarType(VF.Barline.type.END); sBot.setEndBarType(VF.Barline.type.END); }
+      [sTop, sBot].forEach(st => { st.setStyle(style(ink)); st.setContext(ctx).draw(); });
+      const cpNotes = S.filter(s => s.bar === b).map(s => {
+        const k = s.idx, dur = s.per === 1 ? 'w' : s.per === 2 ? 'h' : 'q';
+        if (s.rest) { const r = new VF.StaveNote({ keys: [cpClef === 'bass' ? 'd/3' : 'b/4'], duration: dur + 'r', clef: cpClef }); r.setStyle(style(ink)); return r; }
+        const d = val(M, k);
+        if (d == null) return new VF.GhostNote({ duration: dur });
+        const alt = altAt(M, k, d);
+        const nt = new VF.StaveNote({ keys: [vfKey(d, alt)], duration: dur, clef: cpClef, auto_stem: true });
+        if (alt) nt.addModifier(new VF.Accidental('#'), 0);
+        const c = colors[worst(E.iss[k])] || ink;
+        nt.setStyle(style(c));
+        if (nt.setLedgerLineStyle) nt.setLedgerLineStyle(style(ink));
+        notes[k] = nt;
+        return nt;
+      });
+      const cfNote = new VF.StaveNote({ keys: [vfKey(M.cf[b], 0)], duration: 'w', clef: cfClef });
+      cfNote.setStyle(style(ink));
+      if (cfNote.setLedgerLineStyle) cfNote.setLedgerLineStyle(style(ink));
+      const v1 = new VF.Voice({ num_beats: 4, beat_value: 4 }).setMode(VF.Voice.Mode.SOFT).addTickables(cpNotes);
+      const v2 = new VF.Voice({ num_beats: 4, beat_value: 4 }).setMode(VF.Voice.Mode.SOFT).addTickables([cfNote]);
+      v1.setStave(cpSt); v2.setStave(cfSt);
+      const startX = Math.max(cpSt.getNoteStartX(), cfSt.getNoteStartX());
+      cpSt.setNoteStartX(startX); cfSt.setNoteStartX(startX);
+      new VF.Formatter().joinVoices([v1]).joinVoices([v2]).format([v1, v2], Math.max(20, cpSt.getNoteEndX() - startX - 14));
+      v1.draw(ctx, cpSt); v2.draw(ctx, cfSt);
+      const conn = new VF.StaveConnector(sTop, sBot).setType(VF.StaveConnector.type.SINGLE_RIGHT);
+      conn.setContext(ctx).draw();
+      x += w;
+    }
+    if (firstTop) new VF.StaveConnector(firstTop, firstBot).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
+    S.forEach(s => {
+      if (s.tie != null && notes[s.tie] && notes[s.idx]) {
+        new VF.StaveTie({ first_note: notes[s.tie], last_note: notes[s.idx], first_indices: [0], last_indices: [0] }).setContext(ctx).draw();
+      }
+    });
+    const svg = host.querySelector('svg');
+    if (svg) { svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Staff notation of the counterpoint and cantus firmus'); }
+  } catch (e) {
+    host.innerHTML = `<p class="small">Couldn’t draw the notation (${e.message}).</p>`;
+  }
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (M && !$('game').hidden) render(); });
 
 /* ================= landing ================= */
 function ratioHtml(lanes) {
@@ -780,7 +1128,9 @@ $('speciesCards').innerHTML = [1, 2, 3, 4].map(n => `
     <h3>${SPECIES[n].name}</h3>
     ${ratioHtml(SPECIES[n].lanes)}
     <p>${SPECIES[n].desc}</p>
+    <span class="progress" data-progress="${n}"></span>
   </button>`).join('');
+renderLanding();
 $('speciesCards').addEventListener('click', e => {
   const b = e.target.closest('.sp-card'); if (!b) return;
   const last = store.get('cps:last');
